@@ -107,17 +107,31 @@ def decode_shard(path: Path, pool: ThreadPoolExecutor, audio_col: str,
     t = pq.read_table(path, columns=cols).to_pydict()
     audio = t[audio_col]
 
+    def raw(a):
+        # HF Audio columns are a {bytes, path} struct; some datasets store bare wav bytes.
+        return a["bytes"] if isinstance(a, dict) else a
+
     def one(a):
-        w, sr = sf.read(io.BytesIO(a["bytes"]), dtype="float32", always_2d=False)
+        w, sr = sf.read(io.BytesIO(raw(a)), dtype="float32", always_2d=False)
         if w.ndim > 1:
             w = w.mean(axis=1)
         return w, int(sr)
 
     decoded = list(pool.map(one, audio))
+
+    # Without a path we have no natural key, so synthesise a stable one from provenance:
+    # the shard stem plus the row index is reproducible and unique across the corpus.
+    stem = path.stem
+    paths, ids = [], []
+    for i, a in enumerate(audio):
+        p = a.get("path") if isinstance(a, dict) else None
+        paths.append(p)
+        ids.append(Path(p).stem if p else f"{stem}_{i:06d}")
+
     return {
         "shard": path.name,
-        "ids": [Path(a["path"] or f"row{i}").stem for i, a in enumerate(audio)],
-        "paths": [a["path"] for a in audio],
+        "ids": ids,
+        "paths": paths,
         "texts": t[text_col] if text_col else [None] * len(audio),
         "waves": [w for w, _ in decoded],
         "srs": [sr for _, sr in decoded],

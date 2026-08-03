@@ -103,12 +103,28 @@ python phonemise.py --data data/raw/data --out out/shards
 ```
 
 One parquet of results per input shard, and finished shards are skipped, so it is safe to
-interrupt and re-run. Merge into a publishable sidecar dataset:
+interrupt and re-run. Then merge into a publishable dataset, in either of two shapes:
 
 ```bash
+# self-contained: source audio carried alongside the phonemes
+python build_dataset.py --shards out/shards --out out/dataset \
+    --with-audio --source-shards data/raw/data \
+    --repo your-org/your-dataset-ipa --push
+
+# sidecar: phonemes only, a few MB, joined to the source dataset on `id`
 python build_dataset.py --shards out/shards --out out/dataset \
     --repo your-org/your-dataset-ipa --push
 ```
+
+`--with-audio` copies the audio bytes **straight across from the source parquet** — never
+decoded and re-encoded, so the published waveforms are bit-for-bit the ones the phonemes were
+derived from, and a lossy source is not re-compressed. Rows are matched on the `(shard, row)`
+provenance that `phonemise.py` records, and the source `audio.path` is asserted against the
+recorded one, so a reordered or mismatched source shard fails loudly rather than quietly
+pairing the wrong clip with the wrong phonemes.
+
+Use `--clear-remote` when republishing an existing repo in a different shape; the shard names
+change, and otherwise the old files linger and the `data_files` globs match both sets.
 
 ### Other datasets
 
@@ -135,19 +151,23 @@ a prefetch thread, so if you see the GPU idling between shards, raise it.
 
 ## Output
 
-`phonemise.py` writes a **sidecar** table — no audio, keyed by the source clip filename, so
-it joins back onto the source dataset without republishing waveforms.
+`phonemise.py` writes one results parquet per input shard — no audio, so intermediate output
+stays small:
 
 | column | meaning |
 |---|---|
-| `id` | clip id, e.g. `segment_042811` — the join key |
+| `id` | clip id, e.g. `segment_042811` |
 | `audio_path` | source `audio.path` |
-| `shard`, `row` | provenance back to the exact source row |
+| `shard`, `row` | provenance back to the exact source row — how `--with-audio` rejoins |
 | `duration` | seconds |
 | `text` | source text, carried through unchanged |
 | `ipa` | phonemes, **space-separated** |
 | `ipa_units` | the same phonemes as a list |
 | `n_units` | unit count |
+
+`build_dataset.py` turns those into either a self-contained dataset with the audio
+(`--with-audio`) or a phonemes-only sidecar, and writes a dataset card with the stats and
+caveats filled in.
 
 ### Never split IPA by character
 
@@ -171,6 +191,58 @@ units = list(row["ipa"])        # wrong — tears k͡p into three characters
   reflects that and will not match a rule-based grapheme-to-phoneme rendering of the text.
   That is the reason to use an acoustic model — and the reason `ipa` and `text` will
   legitimately disagree.
+
+## Using the phonemes to train TTS
+
+The second half of this repo is the pipeline that turns those phonemes into TTS training data
+and then scores the resulting models.
+
+| file | what it does |
+|---|---|
+| `speaker_labels.py` | ECAPA speaker embeddings → pseudo-speaker labels, plus per-clip SNR/clipping/silence metrics |
+| `prepare_training.py` | attaches speaker labels and QC flags to the phonemised dataset |
+| `english_select.py` | scores a second-language corpus on text↔audio agreement and picks a balanced high-quality subset |
+| `export_english_wavs.py` | exports the selection into the shared wav dir and merges manifests |
+| `tts_data.py` | one shared wav dir + manifest, then per-framework metadata (`piper`, …) |
+| `adapt_piper_ckpt.py` | resizes a pretrained Piper checkpoint's speaker table to your speaker count |
+| `tts_eval.py` | **round-trip evaluation: synthesise, re-recognise, measure phoneme UER** |
+
+### Round-trip evaluation
+
+The model that produced the targets can also judge the TTS trained on them. Synthesise held-out
+phoneme sequences, run the ASR back over the audio, and measure the unit error rate against what
+you asked for. It is automatic, needs no reference recording, and unlike validation loss it
+tracks something you care about — whether the phonemes are actually being articulated.
+
+```bash
+python tts_eval.py --manifest data/manifest_val.tsv \
+    --synth-dir out/synth_step50000 --real-dir data/wav --limit 500
+```
+
+```
+round-trip UER on synthesised audio : 0.74%
+UER on the real recordings (floor)  : 0.74%
+gap                                : +0.00%   <- the number to watch
+```
+
+**Read the gap, not the raw UER.** Feeding the *real* recordings back through gives the floor.
+When the targets were produced by the same ASR on the same audio that floor is near zero (0.74%
+above is resampling and batching noise), which makes the metric a nearly pure measure of TTS
+fidelity. If your targets come from elsewhere, the floor will be higher and subtracting it
+matters.
+
+Two limits worth stating plainly: it rewards clarity rather than naturalness, so a crisp robotic
+voice can outscore a warm mumbling one; and both sides share one model, so systematic ASR biases
+cancel in the gap but not in the raw number. Use it to pick checkpoints and catch regressions,
+then listen before calling a voice good.
+
+### Speaker labels for corpora that have none
+
+Broadcast corpora are usually many-speaker and unlabelled, and most light TTS architectures want
+a speaker id. `speaker_labels.py` embeds every clip and clusters — k-means over-segmentation
+followed by agglomeration of the *centroids*, because 161k×161k pairwise distances is 100 GB and
+centroid-space is not. The threshold errs toward splitting: over-splitting one real speaker into
+two ids costs a model almost nothing, while merging two real speakers muddies the voice.
 
 ## Files
 
