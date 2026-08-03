@@ -1,0 +1,13 @@
+# Versions this was run with on an H200 (CUDA 12.8, Python 3.12).
+# torch/fairseq2 are the constrained pair — install torch matching your CUDA first.
+torch==2.8.0
+torchaudio==2.8.0
+fairseq2==0.6
+numpy<2
+pyarrow>=15
+soundfile>=0.12
+PyYAML>=6
+huggingface_hub>=0.30
+
+# validate.py only: the reference int8 decoder from the model card.
+sherpa-onnx>=1.13
