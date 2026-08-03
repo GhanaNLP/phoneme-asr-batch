@@ -13,7 +13,13 @@
 #   round-trip phoneme UER, measured separately by tts_eval.py - intelligibility
 #
 # Note: --data.espeak_voice is required by the CLI even in phoneme_ids mode, where the ids
-# come from the CSV and espeak is never called. The value is inert.
+# come from the CSV and espeak is never called. The value is inert. --data.phoneme_type text
+# is set for the same reason: it selects a phonemizer that is never used, and avoids
+# constructing the espeak one, whose compiled bridge may not be built.
+#
+# validation_split is small on purpose. The default validates on thousands of utterances,
+# which at UTMOS speed costs ~9 minutes every 2000 steps — around 20% of total throughput
+# for a metric that is a mean and stabilises in a few hundred samples.
 #
 # The three cover different failure modes. val_mos cannot tell whether the right phonemes
 # were said; the round-trip UER cannot tell whether the result sounds pleasant. Training
@@ -59,6 +65,7 @@ exec $PY -m piper.train fit \
   --data.config_path "$RUN/config.json" \
   --data.batch_size "$BATCH" \
   --data.num_workers 12 \
+  --data.validation_split 0.005 \
   --model.num_speakers "$NSPK" \
   --model.sample_rate 22050 \
   --model.warmstart_ckpt "$ADAPTED" \
