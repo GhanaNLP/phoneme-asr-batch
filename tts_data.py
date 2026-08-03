@@ -18,6 +18,7 @@ import argparse
 import csv
 import io
 import json
+import re
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -143,7 +144,8 @@ def build_piper_map(units: list[str], piper_src: Path | None) -> dict[str, list[
     return id_map
 
 
-def export_piper(out: Path, tokens: Path, piper_src: Path | None) -> None:
+def export_piper(out: Path, tokens: Path, piper_src: Path | None,
+                 lang_tokens: bool = True) -> None:
     vocab = []
     for line in tokens.read_text(encoding="utf-8").splitlines():
         if line:
@@ -152,9 +154,26 @@ def export_piper(out: Path, tokens: Path, piper_src: Path | None) -> None:
     units = [u for u in vocab if not (u.startswith("<") and u.endswith(">"))]
 
     id_map = build_piper_map(units, piper_src)
-    (out / "phonemes.json").write_text(json.dumps(id_map, ensure_ascii=False, indent=1))
-
     rows = read_manifest(out)
+
+    # A language token prefixed to each sequence. The speaker embedding already correlates
+    # with language here (the two speaker sets are disjoint), but the token makes language
+    # an explicit control at inference, so a voice can be asked to read the other language.
+    langs = sorted({r.get("language", "") for r in rows if r.get("language")})
+    lang_sym: dict[str, str] = {}
+    if lang_tokens and len(langs) > 1:
+        nxt = max(i for v in id_map.values() for i in v) + 1
+        for lang in langs:
+            sym = f"«{lang}»"
+            if nxt >= 256:
+                raise SystemExit("no id space left for language tokens")
+            id_map[sym] = [nxt]
+            lang_sym[lang] = sym
+            nxt += 1
+        print(f"language tokens: " +
+              ", ".join(f"{k}={id_map[v][0]}" for k, v in lang_sym.items()))
+
+    (out / "phonemes.json").write_text(json.dumps(id_map, ensure_ascii=False, indent=1))
     dropped = 0
     for name, want in (("train", "train"), ("val", "test")):
         with open(out / f"metadata_{name}.csv", "w", encoding="utf-8") as fh:
@@ -167,11 +186,18 @@ def export_piper(out: Path, tokens: Path, piper_src: Path | None) -> None:
                     dropped += 1
                     continue
                 ids = list(id_map[BOS]) + list(id_map[PAD])
+                sym = lang_sym.get(r.get("language", ""))
+                if sym:
+                    ids += list(id_map[sym]) + list(id_map[PAD])
                 for u in us:
                     ids += list(id_map[u]) + list(id_map[PAD])
                 ids += list(id_map[EOS])
                 # utt_id|speaker|text|phoneme_ids   (text is kept for logging only)
-                text = r["text"].replace("|", " ")
+                # Strip the delimiter, quote characters and newlines: the reader is a plain
+                # csv.reader, so a bare double quote makes it treat the rest as a quoted
+                # field and swallow subsequent lines until the next quote — which surfaces
+                # much later as "field larger than field limit".
+                text = re.sub(r'[|"\r\n\t]+', " ", r["text"] or "").strip()
                 fh.write(f"{r['id']}.wav|{r['speaker']}|{text}|"
                          f"{' '.join(map(str, ids))}\n")
                 n += 1
@@ -197,13 +223,16 @@ def main() -> None:
                    default="/mnt/volume_d2wey28/projects/ghana-phoneme-asr/release/onnx/tokens.txt")
     p.add_argument("--piper-src",
                    default="/mnt/volume_d2wey28/projects/tts-twi/piper1-gpl/src")
+    p.add_argument("--no-lang-tokens", action="store_true",
+                   help="omit the per-language token prefix")
 
     a = ap.parse_args()
     if a.cmd == "wavs":
         export_wavs(Path(a.data), Path(a.out), a.sr, a.threads, not a.all)
     else:
         export_piper(Path(a.out), Path(a.tokens),
-                     Path(a.piper_src) if a.piper_src else None)
+                     Path(a.piper_src) if a.piper_src else None,
+                     lang_tokens=not a.no_lang_tokens)
 
 
 if __name__ == "__main__":

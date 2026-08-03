@@ -98,9 +98,14 @@ def main() -> None:
         with open(mpath, encoding="utf-8") as fh:
             for r in csv.DictReader(fh, delimiter="\t", quoting=csv.QUOTE_NONE,
                                     escapechar="\\"):
-                r.setdefault("language", args.twi_language)
-                r["language"] = r.get("language") or args.twi_language
+                lang = r.get("language") or args.twi_language
+                # Drop any rows this script added before: reruns (new thresholds, a bigger
+                # target) must replace the previous selection, not stack on top of it.
+                if lang == args.language:
+                    continue
+                r["language"] = lang
                 old.append({k: r.get(k, "") for k in FIELDS})
+        print(f"kept {len(old)} existing non-{args.language} manifest rows")
     combined = old + [{k: r[k] for k in FIELDS} for r in rows]
 
     with open(mpath, "w", newline="", encoding="utf-8") as fh:

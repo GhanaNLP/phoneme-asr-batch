@@ -79,6 +79,18 @@ def edit_distance(a: list, b: list) -> int:
 
 
 def load_cmudict() -> dict[str, list[str]]:
+    """First pronunciation per word.
+
+    Prefers the standalone `cmudict` package over nltk: nltk ships an import guard that
+    refuses to load `regex` when the working directory is on sys.path, which is exactly the
+    situation when running a script from its own directory.
+    """
+    try:
+        import cmudict as cmu
+        return {w: prons[0] for w, prons in cmu.dict().items()}
+    except ImportError:
+        pass
+
     import nltk
     try:
         from nltk.corpus import cmudict
@@ -135,10 +147,18 @@ def main() -> None:
                     help="how much English to keep; default matches the Twi side")
     ap.add_argument("--min-coverage", type=float, default=0.7,
                     help="minimum CMUdict word coverage to trust the agreement score")
-    ap.add_argument("--max-uer", type=float, default=0.55,
+    ap.add_argument("--max-uer", type=float, default=0.40,
                     help="reject above this coarse-class UER")
     ap.add_argument("--min-dur", type=float, default=2.0)
-    ap.add_argument("--max-dur", type=float, default=12.0)
+    ap.add_argument("--max-dur", type=float, default=15.0)
+    ap.add_argument("--min-rate", type=float, default=10.0,
+                    help="minimum phoneme rate in units/s. The default is tuned for a "
+                         "second language the ASR was not trained on, where it "
+                         "under-produces: this corpus's median is 7.7 units/s against 11.4 "
+                         "for the in-domain language, so a low rate means dropped phonemes "
+                         "rather than slow speech. Training on those would teach a TTS "
+                         "model to swallow sounds.")
+    ap.add_argument("--max-rate", type=float, default=25.0)
     ap.add_argument("--min-snr", type=float, default=15.0)
     ap.add_argument("--max-clip-frac", type=float, default=0.001)
     ap.add_argument("--max-silence-frac", type=float, default=0.5)
@@ -187,7 +207,7 @@ def main() -> None:
             why.append("clipping")
         if silf > args.max_silence_frac:
             why.append("mostly_silence")
-        if not (4.0 <= rate <= 25.0):
+        if not (args.min_rate <= rate <= args.max_rate):
             why.append("bad_rate")
         for w in why:
             reasons[w] += 1
