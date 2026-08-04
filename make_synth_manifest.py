@@ -5,46 +5,31 @@ certainly the source of the ASR's own 172-unit inventory: every unit it emits fo
 already in the trained phoneme map, and its style matches the training targets exactly
 (aspirated pʰ/tʰ/kʰ, ɾ for r, ɪ in closed syllables).
 
-English is not covered by ghana-g2p, so it goes through CMUdict with an ARPAbet mapping folded
-to Ghanaian English. The fold is not guesswork: it was read off the unit frequencies in the
-English half of the training data, and the data disagrees with the obvious choices in ways that
-matter.
+English is not covered by ghana-g2p, so it goes through espeak-ng — the same phonemiser that
+produced the English training targets, and whose symbols are the ones Piper's pretrained
+checkpoints were built on.
 
-    k  3.14%   kʰ 0.00%      the English half uses PLAIN stops, where Twi is aspirated
-    t  6.66%   tʰ 0.02%
-    r  2.30%   ɾ  0.06%      plain r, not the Twi tap
-    d  5.79%   ð  0.00%      "th" is realised as [d]
-    i  8.08%   ɪ  1.71%      i preferred over ɪ
+Using the *same function* here as in training is the whole point. An earlier version of this
+file folded ARPAbet into the Ghanaian inventory (θ→t, æ→a, monophthongal FACE/GOAT). Measured
+against the training targets that fold disagreed on 51% of units, and the resulting TTS scored
+68.6% round-trip error against Twi's 25.6%. The fold also collapsed 74 word groups that English
+distinguishes — calm/come, bought/but, day/they — so identical inputs had to explain different
+recordings, and the busiest symbols in the inventory (a alone carried æ ɑ ʌ ə) were overloaded.
 
-Using Twi's aspirated stops for English would put the input out of the distribution the model
-learned, so the two languages get different consonant sets and the language token reinforces
-the split. Unstressed vowels map to full vowels rather than schwa, which is both a documented
-feature of Ghanaian English and what the data shows (ə does not reach the top 30 units).
+Accent is acoustic, not symbolic: write the canonical phoneme and let the model render it with
+the accent that is actually in the audio.
 """
 from __future__ import annotations
 
 import argparse
 import csv
 import re
+import subprocess
 from collections import Counter
 from pathlib import Path
 
 FIELDS = ["id", "speaker", "split", "duration", "text", "ipa", "n_units", "language"]
 WORD_RE = re.compile(r"[A-Za-z']+")
-
-# ARPAbet -> our inventory, Ghanaian English. Plain stops, non-rhotic, monophthongal
-# FACE/GOAT, no schwa reduction. See the module docstring for the evidence.
-ARPA_IPA: dict[str, list[str]] = {
-    "AA": ["a"], "AE": ["a"], "AH": ["a"], "AO": ["ɔ"],
-    "AW": ["a", "u"], "AY": ["a", "i"], "EH": ["ɛ"], "ER": ["ɛ"],
-    "EY": ["e"], "IH": ["ɪ"], "IY": ["i"], "OW": ["o"],
-    "OY": ["ɔ", "i"], "UH": ["ʊ"], "UW": ["u"],
-    "B": ["b"], "CH": ["t͡ʃ"], "D": ["d"], "DH": ["d"], "F": ["f"], "G": ["ɡ"],
-    "HH": ["h"], "JH": ["d͡ʒ"], "K": ["k"], "L": ["l"], "M": ["m"], "N": ["n"],
-    "NG": ["ŋ"], "P": ["p"], "R": ["r"], "S": ["s"], "SH": ["ʃ"], "T": ["t"],
-    "TH": ["t"], "V": ["v"], "W": ["w"], "Y": ["j"], "Z": ["z"], "ZH": ["ʒ"],
-}
-
 
 def twi_g2p(text: str, dialect: str):
     from ghana_g2p import GhanaG2P
@@ -53,28 +38,42 @@ def twi_g2p(text: str, dialect: str):
     return units
 
 
-def english_g2p(text: str, cmu: dict) -> tuple[list[str], list[str]]:
-    units: list[str] = []
-    oov: list[str] = []
-    for tok in re.findall(r"[A-Za-z']+|[.,?!;:]", text):
-        if tok in ".,?!;:":
-            units.append(tok)
-            continue
-        pron = cmu.get(tok.lower())
-        if pron is None:
-            oov.append(tok)
-            continue
-        for ph in pron:
-            m = ARPA_IPA.get(ph.rstrip("012"))
-            if m:
-                units.extend(m)
-    return units, oov
+def tokenize(ipa: str, symbols) -> list[str]:
+    """Greedy longest-match, because some symbols are multi-character (aɪ, eɪ, kʰ, k͡p)."""
+    order = sorted(symbols, key=len, reverse=True)
+    out: list[str] = []
+    i = 0
+    while i < len(ipa):
+        for s in order:
+            if ipa.startswith(s, i):
+                out.append(s)
+                i += len(s)
+                break
+        else:
+            i += 1
+    return out
+
+
+def english_g2p(text: str, symbols) -> tuple[list[str], list[str]]:
+    """espeak-ng, matching how the English targets were produced.
+
+    This has to be the same function used for training. An earlier version folded ARPAbet
+    into the Ghanaian inventory (θ→t, æ→a); the model is trained on canonical espeak IPA, so
+    using the fold here would put every English utterance ~50% out of distribution — which is
+    exactly the bug this pipeline was rebuilt to remove.
+    """
+    r = subprocess.run(["espeak-ng", "-q", "--ipa", "-v", "en-us", "--", text],
+                       capture_output=True, text=True)
+    ipa = " ".join(r.stdout.split())
+    if not ipa:
+        return [], [text]
+    return tokenize(ipa, symbols), []
 
 
 SPAN_RE = re.compile(r"\[([^\]]*)\]")
 
 
-def mixed_g2p(text: str, dialect: str, cmu: dict) -> tuple[list[str], list[str]]:
+def mixed_g2p(text: str, dialect: str, symbols) -> tuple[list[str], list[str]]:
     """Code-switched line: [bracketed] spans are English, everything else is Twi.
 
     Each span is phonemised by its own language's rules, which matters because the two
@@ -95,7 +94,7 @@ def mixed_g2p(text: str, dialect: str, cmu: dict) -> tuple[list[str], list[str]]
             units += twi_g2p(twi_part, dialect)
         eng_part = m.group(1).strip()
         if eng_part:
-            u, o = english_g2p(eng_part, cmu)
+            u, o = english_g2p(eng_part, symbols)
             units += u
             oov += o
         pos = m.end()
@@ -139,7 +138,9 @@ def main() -> None:
     known = None
     if args.id_map:
         import json
-        known = set(json.loads(Path(args.id_map).read_text())["phoneme_id_map"])
+        # Accepts either a voice config.json or a bare {symbol: [id]} phonemes.json.
+        m = json.loads(Path(args.id_map).read_text())
+        known = set(m.get("phoneme_id_map", m))
 
     jobs: list[tuple[str, list[str]]] = []
     if args.twi_file:
@@ -157,7 +158,6 @@ def main() -> None:
     if not jobs:
         raise SystemExit("pass --twi-file, --eng-file and/or --mixed-file")
 
-    cmu = None
     rows = []
     for lang, sents in jobs:
         if lang == "mixed":
@@ -184,13 +184,14 @@ def main() -> None:
                 units = twi_g2p(text, args.dialect)
                 oov: list[str] = []
             else:
-                if cmu is None:
-                    import cmudict
-                    cmu = {w: p[0] for w, p in cmudict.dict().items()}
+                if known is None:
+                    raise SystemExit(
+                        "--id-map is required for English: espeak output must be tokenised "
+                        "against the trained symbol set")
                 if lang == "mixed":
-                    units, oov = mixed_g2p(text, args.dialect, cmu)
+                    units, oov = mixed_g2p(text, args.dialect, known)
                 else:
-                    units, oov = english_g2p(text, cmu)
+                    units, oov = english_g2p(text, known)
             if oov:
                 print(f"  [oov] {lang} #{si}: {' '.join(oov)}")
             if known is not None:
