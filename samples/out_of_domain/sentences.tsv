@@ -1,0 +1,25 @@
+id	speaker	split	duration	text	ipa	n_units	language
+ood_twi_00_spk_0006	spk_0006	test	0.0	Akwaaba, wo ho te sɛn?	a kʷ a a b a , w o h o tʰ e s ɛ n ?	17	twi
+ood_twi_00_spk_0075	spk_0075	test	0.0	Akwaaba, wo ho te sɛn?	a kʷ a a b a , w o h o tʰ e s ɛ n ?	17	twi
+ood_twi_01_spk_0006	spk_0006	test	0.0	Me da wo ase paa, Onyame nhyira wo.	m e d a w o a s e pʰ a a , o ɲ a m e n ç ɪ ɾ a w o .	26	twi
+ood_twi_01_spk_0075	spk_0075	test	0.0	Me da wo ase paa, Onyame nhyira wo.	m e d a w o a s e pʰ a a , o ɲ a m e n ç ɪ ɾ a w o .	26	twi
+ood_twi_02_spk_0006	spk_0006	test	0.0	Ghana yɛ ɔman a ɛwɔ Afrika atɔeɛ fam.	ɡ h a n a j ɛ ɔ m a n a ɛ w ɔ a f ɾ ɪ kʰ a a tʰ ɔ eɛ f a m .	29	twi
+ood_twi_02_spk_0075	spk_0075	test	0.0	Ghana yɛ ɔman a ɛwɔ Afrika atɔeɛ fam.	ɡ h a n a j ɛ ɔ m a n a ɛ w ɔ a f ɾ ɪ kʰ a a tʰ ɔ eɛ f a m .	29	twi
+ood_twi_03_spk_0006	spk_0006	test	0.0	Yɛfrɛ me Kwame na mefiri Kumasi.	j ɛ f ɾ ɛ m e kʷ a m e n a m e f ɪ ɾ ɪ kʰ u m a s ɪ .	26	twi
+ood_twi_03_spk_0075	spk_0075	test	0.0	Yɛfrɛ me Kwame na mefiri Kumasi.	j ɛ f ɾ ɛ m e kʷ a m e n a m e f ɪ ɾ ɪ kʰ u m a s ɪ .	26	twi
+ood_twi_04_spk_0006	spk_0006	test	0.0	Anɔpa yi, ɔsoro abue na awia bɔ.	a n ɔ pʰ a j ɪ , ɔ s o ɾ o a b ue n a a w ia b ɔ .	24	twi
+ood_twi_04_spk_0075	spk_0075	test	0.0	Anɔpa yi, ɔsoro abue na awia bɔ.	a n ɔ pʰ a j ɪ , ɔ s o ɾ o a b ue n a a w ia b ɔ .	24	twi
+ood_twi_05_spk_0006	spk_0006	test	0.0	Mepɛ sɛ mesua Twi kasa yie.	m e pʰ ɛ s ɛ m e s u a tɕʷ ɪ kʰ a s a j ie .	20	twi
+ood_twi_05_spk_0075	spk_0075	test	0.0	Mepɛ sɛ mesua Twi kasa yie.	m e pʰ ɛ s ɛ m e s u a tɕʷ ɪ kʰ a s a j ie .	20	twi
+ood_eng_00_eng_0031	eng_0031	test	0.0	Good morning, welcome to Ghana Radio news.	ɡ ʊ d m ɔ r n ɪ ŋ , w ɛ l k a m t u ɡ a n a r e d i o n u z .	31	eng
+ood_eng_00_eng_0024	eng_0024	test	0.0	Good morning, welcome to Ghana Radio news.	ɡ ʊ d m ɔ r n ɪ ŋ , w ɛ l k a m t u ɡ a n a r e d i o n u z .	31	eng
+ood_eng_01_eng_0031	eng_0031	test	0.0	The minister said the new policy will start next year.	d a m ɪ n a s t ɛ s ɛ d d a n u p a l a s i w ɪ l s t a r t n ɛ k s t j ɪ r .	39	eng
+ood_eng_01_eng_0024	eng_0024	test	0.0	The minister said the new policy will start next year.	d a m ɪ n a s t ɛ s ɛ d d a n u p a l a s i w ɪ l s t a r t n ɛ k s t j ɪ r .	39	eng
+ood_eng_02_eng_0031	eng_0031	test	0.0	Accra is the capital city of Ghana.	a k r a ɪ z d a k a p a t a l s ɪ t i a v ɡ a n a .	26	eng
+ood_eng_02_eng_0024	eng_0024	test	0.0	Accra is the capital city of Ghana.	a k r a ɪ z d a k a p a t a l s ɪ t i a v ɡ a n a .	26	eng
+ood_eng_03_eng_0031	eng_0031	test	0.0	Thank you very much for listening to this broadcast.	t a ŋ k j u v ɛ r i m a t͡ʃ f ɔ r l ɪ s a n ɪ ŋ t u d ɪ s b r ɔ d k a s t .	37	eng
+ood_eng_03_eng_0024	eng_0024	test	0.0	Thank you very much for listening to this broadcast.	t a ŋ k j u v ɛ r i m a t͡ʃ f ɔ r l ɪ s a n ɪ ŋ t u d ɪ s b r ɔ d k a s t .	37	eng
+ood_eng_04_eng_0031	eng_0031	test	0.0	Researchers built a speech model for Ghanaian languages.	r i s ɛ t͡ʃ ɛ z b ɪ l t a s p i t͡ʃ m a d a l f ɔ r ɡ a n a i a n l a ŋ ɡ w a d͡ʒ a z .	41	eng
+ood_eng_04_eng_0024	eng_0024	test	0.0	Researchers built a speech model for Ghanaian languages.	r i s ɛ t͡ʃ ɛ z b ɪ l t a s p i t͡ʃ m a d a l f ɔ r ɡ a n a i a n l a ŋ ɡ w a d͡ʒ a z .	41	eng
+ood_eng_05_eng_0031	eng_0031	test	0.0	The weather today will be warm and sunny.	d a w ɛ d ɛ t a d e w ɪ l b i w ɔ r m a n d s a n i .	27	eng
+ood_eng_05_eng_0024	eng_0024	test	0.0	The weather today will be warm and sunny.	d a w ɛ d ɛ t a d e w ɪ l b i w ɔ r m a n d s a n i .	27	eng

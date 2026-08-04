@@ -1,0 +1,13 @@
+id	speaker	split	duration	text	ipa	n_units	language
+ood_mixed_00_spk_0006	spk_0006	test	0.0	Mepɛ sɛ mesua [computer science] wɔ [university] hɔ.	m e pʰ ɛ s ɛ m e s u a k a m p j u t ɛ s a i a n s w ɔ j u n a v ɛ s a t i h ɔ .	40	twi
+ood_mixed_00_eng_0031	eng_0031	test	0.0	Mepɛ sɛ mesua [computer science] wɔ [university] hɔ.	m e pʰ ɛ s ɛ m e s u a k a m p j u t ɛ s a i a n s w ɔ j u n a v ɛ s a t i h ɔ .	40	twi
+ood_mixed_01_spk_0006	spk_0006	test	0.0	Me da wo ase, [thank you very much] ɔdɔ.	m e d a w o a s e , t a ŋ k j u v ɛ r i m a t͡ʃ ɔ d ɔ .	27	twi
+ood_mixed_01_eng_0031	eng_0031	test	0.0	Me da wo ase, [thank you very much] ɔdɔ.	m e d a w o a s e , t a ŋ k j u v ɛ r i m a t͡ʃ ɔ d ɔ .	27	twi
+ood_mixed_02_spk_0006	spk_0006	test	0.0	Ɔkyerɛkyerɛni no kaa sɛ [the examination] bɛba [next week].	ɔ tɕʰ e ɾ ɛ tɕʰ e ɾ ɛ n ɪ n o kʰ a a s ɛ d a ɪ ɡ z a m a n e ʃ a n b ɛ b a n ɛ k s t w i k .	44	twi
+ood_mixed_02_eng_0031	eng_0031	test	0.0	Ɔkyerɛkyerɛni no kaa sɛ [the examination] bɛba [next week].	ɔ tɕʰ e ɾ ɛ tɕʰ e ɾ ɛ n ɪ n o kʰ a a s ɛ d a ɪ ɡ z a m a n e ʃ a n b ɛ b a n ɛ k s t w i k .	44	twi
+ood_mixed_03_spk_0006	spk_0006	test	0.0	Yɛn [government] ayɛ [new policy] ama [farmers] nyinaa.	j ɛ n ɡ a v ɛ m a n t a j ɛ n u p a l a s i a m a f a r m ɛ z ɲ ɪ n a a .	37	twi
+ood_mixed_03_eng_0031	eng_0031	test	0.0	Yɛn [government] ayɛ [new policy] ama [farmers] nyinaa.	j ɛ n ɡ a v ɛ m a n t a j ɛ n u p a l a s i a m a f a r m ɛ z ɲ ɪ n a a .	37	twi
+ood_mixed_04_spk_0006	spk_0006	test	0.0	Anɔpa yi me kɔɔ [the market] kɔtɔɔ [tomatoes] ne [onions].	a n ɔ pʰ a j ɪ m e kʰ ɔ ɔ d a m a r k a t kʰ ɔ tʰ ɔ ɔ t a m e t o z n e a n j a n z .	41	twi
+ood_mixed_04_eng_0031	eng_0031	test	0.0	Anɔpa yi me kɔɔ [the market] kɔtɔɔ [tomatoes] ne [onions].	a n ɔ pʰ a j ɪ m e kʰ ɔ ɔ d a m a r k a t kʰ ɔ tʰ ɔ ɔ t a m e t o z n e a n j a n z .	41	twi
+ood_mixed_05_spk_0006	spk_0006	test	0.0	[Doctor] no se mennidi [sugar] pii.	d a k t ɛ n o s e m e n n ɪ d ɪ ʃ ʊ ɡ ɛ pʰ iː .	23	twi
+ood_mixed_05_eng_0031	eng_0031	test	0.0	[Doctor] no se mennidi [sugar] pii.	d a k t ɛ n o s e m e n n ɪ d ɪ ʃ ʊ ɡ ɛ pʰ iː .	23	twi
